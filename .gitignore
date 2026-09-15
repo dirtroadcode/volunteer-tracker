@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+
+# Nix
+result
+
+# Git worktrees
+.worktrees/
+
+# Secrets / local env
+.env.local
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Direnv cache
+.direnv/
+
+.pi/

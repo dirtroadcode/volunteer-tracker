@@ -1,0 +1,39 @@
+{
+  "name": "volunteerist",
+  "version": "0.1.0",
+  "description": "Volunteerist - Google Apps Script volunteer follow-up tracker. Sample: copy the Spreadsheet, run Set Up, connect volunteers to Asks.",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c && cp appsscript.json dist/",
+    "build:validate": "node -e \"const fs=require('fs');const code=fs.readFileSync('dist/Code.js','utf8');if(/^(export|import)\\s/m.test(code)){console.error('ERROR: ES module syntax found in dist/Code.js');process.exit(1)}console.log('Build validation passed')\"",
+    "push": "npm run build && npm run build:validate && clasp push -f",
+    "watch": "rollup -c -w",
+    "login": "clasp login",
+    "login:status": "clasp login --status",
+    "pull": "clasp pull",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check --error-on-warnings .",
+    "lint:fix": "biome check --write --error-on-warnings .",
+    "check:commit": "npm run lint && npm run typecheck",
+    "check": "npm run check:commit && npm run test",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "nix develop . -c npm run check:commit",
+    "pre-push": "nix develop . -c npm run test"
+  },
+  "devDependencies": {
+    "@google/clasp": "^2.4.2",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/google-apps-script": "^1.0.83",
+    "linkedom": "^0.18.13",
+    "rollup": "^4.30.1",
+    "simple-git-hooks": "^2.14.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.0"
+  },
+  "license": "MIT"
+}

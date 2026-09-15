@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Volunteer tracker · Dirtroad Organizing</title>
+    <meta
+      name="description"
+      content="A free Google Sheets volunteer follow-up tracker. Copy the Sample, run Set Up once, and every signup gets a first contact and a follow-up reminder on your own calendar."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Brand tokens pulled from dirtroadorganizing.org's Squarespace CSS via
+         the ganz portal: navy #001f33, near-black #001726, gold #fedd00,
+         white #ffffff. mist/panel/muted are navy-tinted local surfaces. */
+      :root {
+        --ink: #001726;
+        --navy: #001f33;
+        --gold: #fedd00;
+        --paper: #ffffff;
+        --mist: #e7eef4;
+        --panel: #f3f7fa;
+        --muted: #4a5464;
+        --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        --serif: "Lora", ui-serif, Georgia, serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+      }
+      :focus-visible {
+        outline: 3px solid var(--gold);
+        outline-offset: 2px;
+      }
+
+      .wrap {
+        width: 100%;
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 0 1.25rem;
+      }
+
+      .nav {
+        background: var(--navy);
+        color: var(--paper);
+      }
+      .nav__inner {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+      }
+      .brand__name {
+        font-family: var(--serif);
+        font-size: 1.125rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 1;
+        text-transform: lowercase;
+      }
+      .brand__org {
+        font-size: 0.6rem;
+        font-weight: 600;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--gold);
+        line-height: 1;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-size: 0.6rem;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .hero {
+        padding: 3.5rem 0 2.5rem;
+      }
+      h1 {
+        margin: 0.75rem 0 0;
+        font-family: var(--serif);
+        font-size: clamp(2rem, 7vw, 3.25rem);
+        font-weight: 600;
+        line-height: 1.08;
+        letter-spacing: -0.015em;
+      }
+      .lede {
+        margin: 1.25rem 0 0;
+        max-width: 38rem;
+        font-size: 1.0625rem;
+        color: var(--muted);
+      }
+      .lede strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .lede a {
+        color: var(--ink);
+        text-underline-offset: 2px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1.5rem;
+        margin-top: 1.75rem;
+      }
+      .btn {
+        display: inline-block;
+        background: var(--navy);
+        color: var(--paper);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.85rem 1.4rem;
+        min-height: 2.75rem;
+        transition: background-color 0.15s ease;
+      }
+      .btn:hover {
+        background: var(--ink);
+      }
+      .ghost {
+        font-size: 0.9rem;
+        color: var(--muted);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .ghost:hover {
+        color: var(--ink);
+      }
+
+      .steps {
+        position: relative;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .step {
+        position: relative;
+        padding: 1.5rem 0 1.5rem 3rem;
+        border-top: 1px solid var(--mist);
+      }
+      .step::before {
+        content: "";
+        position: absolute;
+        left: calc(0.875rem - 1px);
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--gold);
+      }
+      .step:first-child::before {
+        top: calc(1.5rem + 0.875rem);
+      }
+      .step:last-child::before {
+        bottom: auto;
+        height: calc(1.5rem + 0.875rem);
+      }
+      .step:last-child {
+        border-bottom: 1px solid var(--mist);
+      }
+      .step__node {
+        position: absolute;
+        left: 0;
+        top: 1.5rem;
+        width: 1.75rem;
+        height: 1.75rem;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--gold);
+        background: var(--paper);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--navy);
+      }
+      .step__title {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+      .step__body {
+        margin: 0.35rem 0 0;
+        max-width: 34rem;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      .step__body strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .notes {
+        margin: 2.75rem 0 0;
+      }
+      .notes dl {
+        margin: 0.75rem 0 0;
+      }
+      .note {
+        display: grid;
+        grid-template-columns: 12rem 1fr;
+        gap: 0.25rem 1.5rem;
+        padding: 0.9rem 0;
+        border-top: 1px solid var(--mist);
+      }
+      .note:last-child {
+        border-bottom: 1px solid var(--mist);
+      }
+      .note dt {
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+      .note dd {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      .foot {
+        border-top: 1px solid var(--mist);
+        margin-top: 3rem;
+        padding: 1rem 0 2rem;
+      }
+      .foot .wrap {
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+
+      @media (max-width: 34rem) {
+        .note {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .btn {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap nav__inner">
+        <span class="brand__name">volunteer tracker</span>
+        <span class="brand__org">Dirtroad Organizing</span>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="hero">
+        <h1>No volunteers left behind.</h1>
+        <p class="lede">
+          A free, <a
+            href="https://github.com/dirtroadcode/volunteer-tracker"
+            target="_blank"
+            rel="noopener"
+            >open source</a
+          > volunteer tracker using Google Sheets with some Apps Script magic. Copy it, run <strong>Set Up</strong> once,
+          and every volunteer gets a first contact and a follow-up reminder on your own calendar.
+        </p>
+        <div class="actions">
+          <a
+            class="btn"
+            href="https://docs.google.com/spreadsheets/d/1kkDbFm7887KsAoYB507DA3ClLXC75XMhGuornfhgoHA/copy"
+            >Copy the tracker</a
+          >
+          <a
+            class="ghost"
+            href="https://docs.google.com/spreadsheets/d/1kkDbFm7887KsAoYB507DA3ClLXC75XMhGuornfhgoHA/edit"
+            target="_blank"
+            rel="noopener"
+            >View the Sample</a
+          >
+        </div>
+      </section>
+
+      <ol class="steps">
+        <li class="step">
+          <span class="step__node" aria-hidden="true">1</span>
+          <h2 class="step__title">Copy the tracker</h2>
+          <p class="step__body">
+            Use the button above or open the Sample and choose <strong>File</strong> → <strong>Make a copy</strong>. The copy lands in
+            your Google Drive with all five tabs and the automation attached.
+          </p>
+        </li>
+        <li class="step">
+          <span class="step__node" aria-hidden="true">2</span>
+          <h2 class="step__title">Run Set Up once</h2>
+          <p class="step__body">
+            In your copy, open <strong>Volunteer Tools</strong> → <strong>Set Up</strong>. It will
+            <strong>create a sign-up form</strong> for you. The form just needs to ask for
+            <strong>Name</strong>, <strong>Email</strong>, and <strong>Phone</strong>. Google then shows a
+            one-time permission screen. It may say
+            <strong>“Google hasn’t verified this app”</strong> and name <em>your own</em> email
+            address as the developer — that’s expected, because the copy’s script belongs to you,
+            not to us. Click <strong>Advanced</strong> → <strong>Go to “…” (unsafe)</strong>, or just
+            <strong>Continue</strong> on newer screens, then allow the permissions. It only lets your
+            own copy add reminders to your own calendar.
+          </p>
+        </li>
+        <li class="step">
+          <span class="step__node" aria-hidden="true">3</span>
+          <h2 class="step__title">Work from your calendar</h2>
+          <p class="step__body">
+            New signups land in your <strong>Directory</strong> and put a first-contact reminder on
+            your calendar. When you're ready to give someone work, choose
+            <strong>Volunteer Tools</strong> → <strong>New Action</strong> — pick the volunteer and an
+            Ask, date the deadline, and the reminders take care of themselves.
+          </p>
+        </li>
+      </ol>
+
+      <section class="notes" aria-labelledby="notes-title">
+        <h2 class="eyebrow" id="notes-title">Good to know</h2>
+        <dl>
+          <div class="note">
+            <dt>Menu of Asks</dt>
+            <dd>
+              The things your volunteers can do — canvassing, phone banking, whatever your campaign
+              needs. Rename the examples right on the tab; no code, just typing.
+            </dd>
+          </div>
+          <div class="note">
+            <dt>Settings</dt>
+            <dd>
+              Four timing numbers you can retune any time: first contact the day after signup, a
+              nudge 2 days before a deadline, a thank-you 3 days after, all at 9 am.
+            </dd>
+          </div>
+        </dl>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div class="wrap">Dirtroad Organizing</div>
+    </footer>
+  </body>
+</html>
