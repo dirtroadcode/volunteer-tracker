@@ -48,7 +48,7 @@ coordinator* and never messages volunteers. (See `docs/adr/0003-coordinator-only
 
 ## For coordinators
 
-Setup lives at **[voltracker.dirtroadorganizing.org](https://voltracker.dirtroadorganizing.org/)** —
+Setup lives at **[dirtroadcode.github.io/volunteer-tracker](https://dirtroadcode.github.io/volunteer-tracker/)** —
 the landing page at the repo root (`index.html`). It is the whole quick-start:
 copy the Sample, run **Volunteer Tools → Set Up** once (which creates the
 sign-up Form for you), and the reminders take care of themselves. There is no
@@ -98,8 +98,10 @@ Deployment model: the repo is the source of truth; `clasp push` ships
 Spreadsheet. Coordinators never redeploy — they copy the live Sample.
 
 Separately, the coordinator landing page is served by GitHub Pages from branch
-`main`, folder `/` (enable it in Settings → Pages once the repo is public).
-`CNAME` at the repo root sets the custom domain; no Actions workflow is needed.
+`main`, folder `/`, at https://dirtroadcode.github.io/volunteer-tracker/. The
+page is static, so no Actions workflow or build step is involved. To move it to
+a custom domain, add a `CNAME` file at the repo root and point a DNS record at
+`dirtroadcode.github.io`.
 
 ### Layout
 
@@ -113,7 +115,6 @@ src/index.ts      Apps Script entry points (menu, triggers)
 tests/mocks/      in-memory Google Sheets/Calendar harness
 tests/landing-page.test.ts  contract tests for the landing page
 index.html        the coordinator landing + setup page (GitHub Pages)
-CNAME             GitHub Pages custom domain
 docs/adr/         decisions: copy distribution, Form/Directory split, coordinator-only boundary
 CONTEXT.md        domain glossary (Coordinator, Campaign, Sample, Ask, Action, touches)
 ```
