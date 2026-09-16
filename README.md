@@ -18,13 +18,13 @@ Volunteer fills the intake Form
 Form Responses tab  (the Form's own log; the script only reads it)
         │  intake writes a Directory row and schedules the first contact
         ▼
-Directory tab  (roster)  ──►  Calendar: "First contact: Jane Doe"
+Directory tab  (roster)  ──►  Campaign calendar: "First contact: Jane Doe"
         │  coordinator runs "New Action", picks volunteer · Ask · Deadline in the dialog
         ▼
 Tracker tab: Name · Ask (dropdown) · Deadline · Pre-touch · Post-touch · Notes
         │  the dialog schedules both reminders on submit
         ▼
-Calendar: "Pre-touch: Jane" (Deadline − 2 days)  and
+Campaign calendar: "Pre-touch: Jane" (Deadline − 2 days)  and
           "Post-touch: Jane — canvassing (base)" (Deadline + 3 days)
 ```
 
@@ -36,7 +36,7 @@ Five tabs, each with one job:
 | **Directory** | The volunteer roster — who signed up, plus the intake fields (`Reach out by`, `Calendar Event ID`) | The script on submit; the coordinator changes a reach-out date |
 | **Menu of Asks** | The campaign's list of concrete asks a volunteer can do | The coordinator (type to add/rename/delete — no code); the New Action dialog adds a new ask when you type one |
 | **Tracker** | One row per **Action** — a volunteer committed to an Ask, with its deadline, derived touches, and notes | The coordinator; the script fills pre/post dates and event markers |
-| **Settings** | Four timing knobs: first-contact delay, pre/post offsets, reminder hour | Only the coordinator (whole numbers) |
+| **Settings** | Four timing knobs (first-contact delay, pre/post offsets, reminder hour), plus the Campaign Calendar Set Up records | Only the coordinator |
 
 The split between Form Responses and Directory is deliberate: the coordinator's
 working state never sits on a tab the Form manages, so a new Form question
@@ -45,6 +45,14 @@ cannot shift the roster and rows can be deleted freely. (See
 
 The coordinator-only boundary is deliberate too: the tool reminds *the
 coordinator* and never messages volunteers. (See `docs/adr/0003-coordinator-only-boundary.md`.)
+
+A campaign's reminders live on **one Campaign Calendar** that Set Up creates and
+records in Settings — not on whoever happens to run New Action. That keeps the
+event ids stored in the Tracker resolvable for every editor, so a second person
+can't split the reminders onto their personal calendar. To give the team the same
+reminders, share that calendar from **Google Calendar → Other calendars**:
+"See all event details" to watch, or "Make changes to events" only for teammates
+who will run New Action themselves. (See `docs/adr/0005-campaign-calendar.md`.)
 
 ## For coordinators
 

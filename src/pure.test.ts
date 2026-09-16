@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CONFIG } from './config';
 import {
   addDays,
   atHour,
@@ -144,6 +145,17 @@ describe('parseSettings', () => {
 
   it('rejects a reminder hour outside 0–23', () => {
     expect(parseSettings(withValue(3, 24)).problems.join()).toMatch(/0 to 23/);
+  });
+
+  it('ignores an unknown row such as the recorded Campaign Calendar', () => {
+    const rows: unknown[][] = [
+      ...settingsRows(),
+      [CONFIG.calendar.settingLabel, 'abc@group.calendar.google.com'],
+    ];
+    expect(parseSettings(rows)).toEqual({
+      settings: { firstContactDays: 1, preDaysBefore: 2, postDaysAfter: 3, reminderHour: 9 },
+      problems: [],
+    });
   });
 
   /** The default rows with one value replaced. */

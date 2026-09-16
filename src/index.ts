@@ -44,7 +44,11 @@ function services(): Services {
   return buildServices({
     getActiveSpreadsheet: () => SpreadsheetApp.getActiveSpreadsheet(),
     getUi: () => SpreadsheetApp.getUi(),
-    getDefaultCalendar: () => CalendarApp.getDefaultCalendar(),
+    calendars: {
+      createCalendar: (name, options) => CalendarApp.createCalendar(name, options ?? {}),
+      getCalendarById: (id) => CalendarApp.getCalendarById(id),
+      getOwnedCalendarsByName: (name) => CalendarApp.getOwnedCalendarsByName(name),
+    },
     getScript: () => ScriptApp,
     newDataValidation: () => SpreadsheetApp.newDataValidation(),
     showHtml: (html, title) =>

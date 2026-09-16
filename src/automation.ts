@@ -55,6 +55,7 @@ export interface SheetsLike {
   insertSheet(name: string): SheetLike;
   getSheets(): SheetLike[];
   getId(): string;
+  getName(): string;
   getFormUrl(): string | null;
   getSheetById(id: number): SheetLike | null;
   getActiveSheet(): SheetLike;
@@ -90,6 +91,7 @@ export interface CalendarEventLike {
 }
 
 export interface CalendarLike {
+  getId(): string;
   createEvent(
     title: string,
     start: Date,
@@ -97,6 +99,13 @@ export interface CalendarLike {
     options?: { description?: string },
   ): { getId(): string };
   getEventById(id: string): CalendarEventLike | null;
+}
+
+/** The calendar app itself — creating and finding calendars, not just using one. */
+export interface CalendarsLike {
+  createCalendar(name: string, options?: { description?: string; timeZone?: string }): CalendarLike;
+  getCalendarById(id: string): CalendarLike | null;
+  getOwnedCalendarsByName(name: string): CalendarLike[];
 }
 
 export interface UiLike {
@@ -151,6 +160,10 @@ export interface ValidationBuilderLike {
 export interface Services {
   ss: SheetsLike;
   ui: UiLike;
+  /** The calendar app — creating and finding calendars, not just using one. */
+  calendars: CalendarsLike;
+  /** The Campaign Calendar every Touchpoint is written to. Resolved lazily from
+   *  the recorded id, so Set Up can create it before anything reads it. */
   cal: CalendarLike;
   script: ScriptLike;
   forms: FormsLike;
@@ -306,6 +319,7 @@ export function runSetupAutomation(services: Services): void {
   const linked = linkForm(services);
   const directory = ensureDirectory(services);
   const settingsSheet = ensureSettings(services);
+  const calendar = ensureCampaignCalendar(services);
 
   const menu = ensureMenuOfAsks(services);
   const tracker = ensureTracker(services, menu);
@@ -320,6 +334,7 @@ export function runSetupAutomation(services: Services): void {
     `• Directory (roster): ${directory.getName()}`,
     `• Menu of Asks: ${menu.getLastRow() - 1} asks (edit freely — no code needed)`,
     `• Tracker: ${sheetExtent(tracker, CONFIG.trackerColumns.name).count} actions so far`,
+    `• Calendar: "${calendar.name}" — share it from Google Calendar → Other calendars (See all event details for watchers, Make changes to events for teammates who add Actions)`,
     `• Triggers: ${
       hasTrigger(services, SUBMIT_HANDLER) && hasTrigger(services, EDIT_HANDLER)
         ? 'installed ✓'
@@ -646,6 +661,69 @@ export function readSettings(services: Services): Settings {
     throw new Error(`Invalid ${CONFIG.tabNames.settings}: ${problems.join('; ')}`);
   }
   return settings;
+}
+
+// ------------------------------------------------- campaign calendar
+
+/** The name Set Up gives this campaign's calendar. */
+function campaignCalendarName(ss: SheetsLike): string {
+  return `${CONFIG.calendar.namePrefix} — ${ss.getName()}`;
+}
+
+/** The recorded calendar id, or '' when Set Up has not created it yet. */
+export function campaignCalendarId(services: Services): string {
+  const sheet = services.ss.getSheetByName(CONFIG.tabNames.settings);
+  return sheet ? settingValue(sheet, CONFIG.calendar.settingLabel) : '';
+}
+
+/**
+ * The Campaign Calendar every Touchpoint is written to. Throws — never falls
+ * back to a personal calendar — when Set Up has recorded no calendar or the
+ * recorded id no longer resolves (deleted, or a share not yet accepted).
+ */
+export function campaignCalendar(services: Services): CalendarLike {
+  const id = campaignCalendarId(services);
+  const cal = id ? services.calendars.getCalendarById(id) : null;
+  if (!cal) {
+    throw new Error(
+      'The campaign calendar is missing. Run Volunteer Tools → Set Up, or accept the calendar share first.',
+    );
+  }
+  return cal;
+}
+
+/**
+ * Create the Campaign Calendar once — reusing the recorded one, or an owned one
+ * already bearing the campaign's name — and write its id to Settings so every
+ * editor and trigger resolves the same calendar.
+ */
+export function ensureCampaignCalendar(services: Services): { id: string; name: string } {
+  const settings = services.ss.getSheetByName(CONFIG.tabNames.settings);
+  if (!settings) throw new Error(`"${CONFIG.tabNames.settings}" tab is missing — run Set Up.`);
+
+  const name = campaignCalendarName(services.ss);
+  const recorded = campaignCalendarId(services);
+  const cal =
+    (recorded ? services.calendars.getCalendarById(recorded) : null) ??
+    services.calendars.getOwnedCalendarsByName(name)[0] ??
+    services.calendars.createCalendar(name, { description: CONFIG.calendar.description });
+
+  setSettingValue(settings, CONFIG.calendar.settingLabel, cal.getId());
+  return { id: cal.getId(), name };
+}
+
+/** One Settings label's value, or ''. */
+function settingValue(sheet: SheetLike, label: string): string {
+  const row = sheetRows(sheet).find((r) => norm(String(r[0] ?? '')) === norm(label));
+  return row ? String(row[1] ?? '').trim() : '';
+}
+
+/** Write a Settings label's value, adding the row when it is missing. */
+function setSettingValue(sheet: SheetLike, label: string, value: string): void {
+  const index = sheetRows(sheet).findIndex((r) => norm(String(r[0] ?? '')) === norm(label));
+  const row = index >= 0 ? index + 1 : sheet.getLastRow() + 1;
+  sheet.getRange(row, 1).setValue(label);
+  sheet.getRange(row, 2).setValue(value);
 }
 
 /**
@@ -1108,6 +1186,14 @@ export function createActionFromDialog(services: Services, input: ActionSubmissi
   const tracker = services.ss.getSheetByName(CONFIG.tabNames.tracker);
   if (!directory || !tracker) {
     return { ok: false, message: 'Run Set Up first — a required tab is missing.' };
+  }
+
+  // The Campaign Calendar is resolved lazily and per read; check it up front so
+  // a missing share reports inline rather than mid-write (or on a personal one).
+  try {
+    campaignCalendar(services);
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : String(error) };
   }
 
   const row = Math.trunc(Number(input.volunteerRow));

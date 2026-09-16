@@ -3,20 +3,22 @@
  * `index.ts` so it can be unit-tested: trigger executions have no editor
  * session, so building services must never resolve the UI.
  */
+
 import type {
-  CalendarLike,
+  CalendarsLike,
   FormsLike,
   Services,
   SheetsLike,
   UiLike,
   ValidationBuilderLike,
 } from './automation';
+import { campaignCalendar } from './automation';
 
 /** The Google globals `buildServices` reads, passed in so tests can drive it. */
 export interface GoogleGlobals {
   getActiveSpreadsheet(): SheetsLike;
   getUi(): UiLike;
-  getDefaultCalendar(): CalendarLike;
+  calendars: CalendarsLike;
   getScript(): Services['script'];
   newDataValidation(): ValidationBuilderLike;
   forms: FormsLike;
@@ -26,12 +28,17 @@ export interface GoogleGlobals {
 }
 
 export function buildServices(google: GoogleGlobals): Services {
-  return {
+  const services: Services = {
     ss: google.getActiveSpreadsheet(),
+    calendars: google.calendars,
     get ui() {
       return google.getUi();
     },
-    cal: google.getDefaultCalendar(),
+    // Lazy: Set Up creates the calendar after services are built, and a trigger
+    // resolves it per execution.
+    get cal() {
+      return campaignCalendar(services);
+    },
     script: google.getScript(),
     forms: google.forms,
     flush: () => google.flush(),
@@ -39,4 +46,5 @@ export function buildServices(google: GoogleGlobals): Services {
     showHtml: (html, title) => google.showHtml(html, title),
     log: (message) => google.log(message),
   };
+  return services;
 }

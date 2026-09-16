@@ -78,6 +78,14 @@ describe('Volunteerist landing page', () => {
     expect(text).toContain('Settings');
   });
 
+  it('tells the coordinator to share the campaign calendar with the team', () => {
+    const text = loadPage().body.textContent ?? '';
+
+    expect(text).toMatch(/campaign calendar/i);
+    expect(text).toMatch(/share/i);
+    expect(text).toContain('Other calendars');
+  });
+
   it('routes form setup through Set Up instead of a dead Sample Form link', () => {
     const document = loadPage();
     const hrefs = [...document.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');

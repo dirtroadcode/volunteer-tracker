@@ -7,6 +7,7 @@
 import type {
   CalendarEventLike,
   CalendarLike,
+  CalendarsLike,
   FormItemLike,
   FormLinkLike,
   FormsLike,
@@ -18,6 +19,8 @@ import type {
   UiLike,
   ValidationBuilderLike,
 } from '../../src/automation';
+import { campaignCalendar as resolveCampaignCalendar } from '../../src/automation';
+import { CONFIG } from '../../src/config';
 
 export interface TabSpec {
   name: string;
@@ -399,6 +402,19 @@ export class MockCalendar implements CalendarLike {
   private byId = new Map<string, MockCalendarEvent>();
   private counter = 0;
 
+  constructor(
+    private readonly id = 'cal-default',
+    private readonly name = 'Mock calendar',
+  ) {}
+
+  getId(): string {
+    return this.id;
+  }
+
+  getName(): string {
+    return this.name;
+  }
+
   createEvent(
     title: string,
     start: Date,
@@ -426,6 +442,52 @@ export class MockCalendar implements CalendarLike {
     this.byId.delete(id);
     const i = this.events.findIndex((e) => e.id === id);
     if (i >= 0) this.events.splice(i, 1);
+  }
+}
+
+/** The user's calendars: a personal default nothing writes to, plus the ones Set Up creates. */
+export class MockCalendars implements CalendarsLike {
+  readonly defaultCalendar = new MockCalendar('cal-default', 'Default calendar');
+  /** Calendars `createCalendar` produced, in order — what Set Up added. */
+  readonly created: MockCalendar[] = [];
+  private readonly owned: MockCalendar[] = [];
+  private seq = 0;
+
+  /** Test-only: a Campaign Calendar that already exists in this world. */
+  seed(calendar: MockCalendar): MockCalendar {
+    this.owned.push(calendar);
+    return calendar;
+  }
+
+  createCalendar(
+    name: string,
+    _options?: { description?: string; timeZone?: string },
+  ): CalendarLike {
+    const cal = new MockCalendar(`cal-${++this.seq}`, name);
+    this.owned.push(cal);
+    this.created.push(cal);
+    return cal;
+  }
+
+  getCalendarById(id: string): CalendarLike | null {
+    return this.owned.find((c) => c.getId() === id) ?? null;
+  }
+
+  getOwnedCalendarsByName(name: string): CalendarLike[] {
+    return this.owned.filter((c) => c.getName() === name);
+  }
+
+  /** Test-only: the calendar was deleted, so its id no longer resolves. */
+  remove(id: string): void {
+    const i = this.owned.findIndex((c) => c.getId() === id);
+    if (i >= 0) this.owned.splice(i, 1);
+  }
+
+  /** The Campaign Calendar — the first owned one. Throws before Set Up made it. */
+  get campaign(): MockCalendar {
+    const cal = this.owned[0];
+    if (!cal) throw new Error('no Campaign Calendar yet — run Set Up');
+    return cal;
   }
 }
 
@@ -642,6 +704,7 @@ export class MockValidationBuilder implements ValidationBuilderLike {
 
 export class MockSpreadsheet implements SheetsLike {
   readonly id = 'ss-test-id';
+  readonly name = 'Test spreadsheet';
   formUrl: string | null = null;
   readonly sheets: MockSheet[] = [];
   private activeIndex = 0;
@@ -672,6 +735,10 @@ export class MockSpreadsheet implements SheetsLike {
 
   getId(): string {
     return this.id;
+  }
+
+  getName(): string {
+    return this.name;
   }
 
   getFormUrl(): string | null {
@@ -715,7 +782,11 @@ export interface World {
   services: Services;
   ss: MockSpreadsheet;
   sheets: MockSheet[];
-  calendar: MockCalendar;
+  calendars: MockCalendars;
+  /** The Campaign Calendar — where Touchpoints land. */
+  readonly calendar: MockCalendar;
+  /** The user's personal calendar, which nothing should write to. */
+  readonly defaultCalendar: MockCalendar;
   ui: MockUi;
   script: MockScript;
   forms: MockForms;
@@ -726,7 +797,7 @@ export interface World {
 /** Build a fresh world, optionally starting with the given tabs. */
 export function createWorld(tabs: TabSpec[] = []): World {
   const ss = new MockSpreadsheet(tabs);
-  const calendar = new MockCalendar();
+  const calendars = new MockCalendars();
   const ui = new MockUi();
   const script = new MockScript();
   const forms = new MockForms();
@@ -735,7 +806,10 @@ export function createWorld(tabs: TabSpec[] = []): World {
   const services: Services = {
     ss,
     ui,
-    cal: calendar,
+    calendars,
+    get cal() {
+      return resolveCampaignCalendar(services);
+    },
     script,
     forms,
     flush: () => {},
@@ -743,11 +817,27 @@ export function createWorld(tabs: TabSpec[] = []): World {
     showHtml: (html, title) => ui.showHtml(html, title),
     log: (message) => logs.push(message),
   };
+  // A world that already has a Settings tab stands in for a campaign that has
+  // run Set Up, so it gets a Campaign Calendar recorded there. A world without
+  // one starts fresh: Set Up creates both the Settings tab and the calendar.
+  const settings = ss.getSheetByName(CONFIG.tabNames.settings);
+  if (settings) {
+    const seeded = calendars.seed(
+      new MockCalendar('cal-campaign', `${CONFIG.calendar.namePrefix} — ${ss.getName()}`),
+    );
+    const row = settings.getLastRow() + 1;
+    settings.getRange(row, 1).setValue(CONFIG.calendar.settingLabel);
+    settings.getRange(row, 2).setValue(seeded.getId());
+  }
   return {
     services,
     ss,
     sheets: ss.sheets,
-    calendar,
+    calendars,
+    get calendar() {
+      return calendars.campaign;
+    },
+    defaultCalendar: calendars.defaultCalendar,
     ui,
     script,
     forms,

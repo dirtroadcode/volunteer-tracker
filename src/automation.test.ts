@@ -70,7 +70,7 @@ function withoutUi(w: World): { services: Services; logs: string[] } {
     getUi: () => {
       throw new Error('Cannot call SpreadsheetApp.getUi() from this context');
     },
-    getDefaultCalendar: () => w.calendar,
+    calendars: w.calendars,
     getScript: () => w.script,
     newDataValidation: () => w.services.makeValidation(),
     forms: w.forms,
@@ -129,6 +129,11 @@ function setSetting(w: World, label: string, value: unknown): void {
   const index = rows.findIndex(([l]) => String(l).trim() === label);
   if (index < 0) throw new Error(`no Settings row labelled "${label}"`);
   settings.getRange(index + 1, 2).setValue(value);
+}
+
+/** Blank the Settings row that records the Campaign Calendar. */
+function clearCampaignCalendar(w: World): void {
+  setSetting(w, CONFIG.calendar.settingLabel, '');
 }
 
 function trackerWorld(): World {
@@ -1129,6 +1134,132 @@ describe('intake scheduling', () => {
     expect(description).toContain('Email: new@example.org');
     expect(description).toContain('Phone: 555-0199');
     expect(description).toContain('About: Excited');
+  });
+});
+
+describe('campaign calendar', () => {
+  it('Set Up creates it once and records it in Settings', () => {
+    const w = createWorld([{ name: 'Form Responses 1', headers: FORM_HEADERS, rows: [] }]);
+    w.ui.queuePrompt('cancel');
+
+    runSetupAutomation(w.services);
+
+    expect(w.calendars.created).toHaveLength(1);
+    const created = w.calendars.created[0];
+    expect(created?.getName()).toBe(`${CONFIG.calendar.namePrefix} — ${w.ss.getName()}`);
+    const settings = w.byName('Settings');
+    const recorded = settings
+      .getRange(1, 1, settings.getLastRow(), 2)
+      .getValues()
+      .find(([label]) => String(label).trim() === CONFIG.calendar.settingLabel);
+    expect(String(recorded?.[1])).toBe(created?.getId());
+
+    const summary = w.ui.alerts.find((a) => a.title === 'Volunteer Tools — Set Up')?.text ?? '';
+    expect(summary).toContain(created?.getName() ?? '');
+    expect(summary).toContain('share');
+  });
+
+  it('reuses the recorded calendar on a second Set Up', () => {
+    const w = createWorld([{ name: 'Form Responses 1', headers: FORM_HEADERS, rows: [] }]);
+    w.ui.queuePrompt('cancel');
+    runSetupAutomation(w.services);
+    const id = w.calendars.created[0]?.getId();
+
+    w.ui.queuePrompt('cancel');
+    runSetupAutomation(w.services);
+
+    expect(w.calendars.created).toHaveLength(1);
+    expect(w.calendars.created[0]?.getId()).toBe(id);
+  });
+
+  it('recovers by name when the recorded id is lost but the calendar remains', () => {
+    const w = createWorld([{ name: 'Form Responses 1', headers: FORM_HEADERS, rows: [] }]);
+    w.ui.queuePrompt('cancel');
+    runSetupAutomation(w.services);
+    const id = w.calendars.created[0]?.getId();
+
+    clearCampaignCalendar(w);
+    w.ui.queuePrompt('cancel');
+    runSetupAutomation(w.services);
+
+    expect(w.calendars.created).toHaveLength(1);
+    const settings = w.byName('Settings');
+    const recorded = settings
+      .getRange(1, 1, settings.getLastRow(), 2)
+      .getValues()
+      .find(([label]) => String(label).trim() === CONFIG.calendar.settingLabel);
+    expect(String(recorded?.[1])).toBe(id);
+  });
+
+  it('creates a fresh calendar when the recorded one no longer exists', () => {
+    const w = createWorld([{ name: 'Form Responses 1', headers: FORM_HEADERS, rows: [] }]);
+    w.ui.queuePrompt('cancel');
+    runSetupAutomation(w.services);
+    w.calendars.remove(w.calendars.created[0]?.getId() ?? '');
+
+    w.ui.queuePrompt('cancel');
+    runSetupAutomation(w.services);
+
+    expect(w.calendars.created).toHaveLength(2);
+  });
+
+  it('schedules first contact on the campaign calendar, never the personal one', () => {
+    const w = trackerWorld();
+
+    submitRow(w, 3, ['2026-02-02 10:00:00', 'New Person', 'new@example.org', '555-0199', 'Hi']);
+
+    expect(w.calendar.events).toHaveLength(1);
+    expect(w.defaultCalendar.events).toHaveLength(0);
+  });
+
+  it('schedules pre/post on the campaign calendar, never the personal one', () => {
+    const w = trackerWorld();
+
+    edit(w, 'Tracker', 2, 'Deadline', deadline);
+
+    expect(w.calendar.events).toHaveLength(2);
+    expect(w.defaultCalendar.events).toHaveLength(0);
+  });
+
+  it('moves the reminders when a different editor edits the deadline', () => {
+    const w = trackerWorld();
+    const editorA = w.services;
+    const editorB = withoutUi(w).services;
+
+    edit(w, 'Tracker', 2, 'Deadline', deadline, '', editorA);
+    const ids = w.calendar.events.map((e) => e.id);
+
+    edit(w, 'Tracker', 2, 'Deadline', new Date(2026, 3, 1), '', editorB);
+
+    expect(w.calendar.events.map((e) => e.id)).toEqual(ids);
+    expect(fmtDate(eventAt(w, 0).start)).toBe('2026-03-30');
+  });
+
+  it('reports a missing calendar inline instead of writing to the personal one', () => {
+    const w = trackerWorld();
+    clearCampaignCalendar(w);
+
+    const result = createActionFromDialog(w.services, {
+      volunteerRow: 2,
+      ask: 'Phone banking',
+      deadline: fmtDate(deadline),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/calendar/i);
+    expect(w.calendar.events).toHaveLength(0);
+    expect(w.defaultCalendar.events).toHaveLength(0);
+  });
+
+  it('throws a clear intake error with no partial Directory row when the calendar is gone', () => {
+    const w = trackerWorld();
+    clearCampaignCalendar(w);
+    const before = w.byName('Directory').getLastRow();
+
+    expect(() =>
+      submitRow(w, 3, ['2026-02-02 10:00:00', 'New', 'new@example.org', '555-3', 'x']),
+    ).toThrow(/campaign calendar/i);
+    expect(w.byName('Directory').getLastRow()).toBe(before);
   });
 });
 

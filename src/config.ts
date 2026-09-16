@@ -67,6 +67,15 @@ export const CONFIG = {
     postDaysAfter: { label: 'Post-touch (days after deadline)', default: 3 },
     reminderHour: { label: 'Reminder hour (24h)', default: 9 },
   },
+  /** The one Calendar a Campaign's Touchpoints live on. */
+  calendar: {
+    /** Settings row recording the calendar id, so every editor resolves it. */
+    settingLabel: 'Campaign calendar',
+    /** Created-calendar name; suffixed with the spreadsheet's name. */
+    namePrefix: 'Volunteer reminders',
+    description:
+      'Touchpoint reminders for this campaign, created by Volunteer Tools → Set Up. Share it with the campaign team to give them the same reminders.',
+  },
   touch: {
     /** Event length in minutes. */
     durationMinutes: 30,
