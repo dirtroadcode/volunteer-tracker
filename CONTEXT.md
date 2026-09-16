@@ -18,6 +18,13 @@ of the Sample. Fully independent of other campaigns: its own volunteer rows,
 its own calendar events.
 _Avoid_: program, roster
 
+**Campaign Calendar**:
+The one Google Calendar a Campaign's Touchpoints are written to, created by Set
+Up and recorded so every editor resolves the same calendar. The Coordinator may
+share it with the campaign team from Google Calendar; its event descriptions
+carry volunteer contact details, so the sharing scope is deliberate.
+_Avoid_: team calendar, shared calendar, feed
+
 **Sample**:
 The distributable original — intake Form, response Spreadsheet, and
 automation — built once and copied by coordinators to start a Campaign.
