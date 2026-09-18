@@ -1157,6 +1157,7 @@ describe('campaign calendar', () => {
     const summary = w.ui.alerts.find((a) => a.title === 'Volunteer Tools — Set Up')?.text ?? '';
     expect(summary).toContain(created?.getName() ?? '');
     expect(summary).toContain('share');
+    expect(summary).toContain('Editor');
   });
 
   it('reuses the recorded calendar on a second Set Up', () => {

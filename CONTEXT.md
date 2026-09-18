@@ -2,15 +2,21 @@
 
 Coordinates volunteer recruitment follow-ups for a coordinator: raw Form
 responses become a volunteer roster, and each volunteer's commitments become
-Actions that put reminders on the coordinator's own calendar. Distributed as a
-copyable Sample, so each coordinator runs their own instance.
+Actions that put reminders on the Campaign Calendar. Distributed as a copyable
+Sample, so each coordinator runs their own instance.
 
 ## Language
 
 **Coordinator**:
-The person who recruits and manages volunteers for their campaign. The sole
-operator of a campaign copy and the only recipient of its calendar reminders.
+The person who sets up a campaign copy, runs it, and owns its Campaign
+Calendar. May invite Collaborators to help.
 _Avoid_: owner, admin, user, operator
+
+**Collaborator**:
+Someone the Coordinator invites to help run a Campaign: they add Actions and
+see the same reminders. They hold edit access to the copy and write access to
+its Campaign Calendar.
+_Avoid_: teammate, helper, member, viewer
 
 **Campaign**:
 One coordinator's volunteer recruitment effort, operated from their own copy
@@ -20,9 +26,10 @@ _Avoid_: program, roster
 
 **Campaign Calendar**:
 The one Google Calendar a Campaign's Touchpoints are written to, created by Set
-Up and recorded so every editor resolves the same calendar. The Coordinator may
-share it with the campaign team from Google Calendar; its event descriptions
-carry volunteer contact details, so the sharing scope is deliberate.
+Up and recorded so every run of the automation resolves the same calendar. The
+Coordinator shares it with Collaborators from Google Calendar; its event
+descriptions carry volunteer contact details, so the sharing scope is
+deliberate.
 _Avoid_: team calendar, shared calendar, feed
 
 **Sample**:

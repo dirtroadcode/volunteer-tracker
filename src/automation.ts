@@ -334,7 +334,7 @@ export function runSetupAutomation(services: Services): void {
     `• Directory (roster): ${directory.getName()}`,
     `• Menu of Asks: ${menu.getLastRow() - 1} asks (edit freely — no code needed)`,
     `• Tracker: ${sheetExtent(tracker, CONFIG.trackerColumns.name).count} actions so far`,
-    `• Calendar: "${calendar.name}" — share it from Google Calendar → Other calendars (See all event details for watchers, Make changes to events for teammates who add Actions)`,
+    `• Calendar: "${calendar.name}" — share it from Google Calendar → Other calendars. A Collaborator who will add Actions also needs Editor access to this spreadsheet (Share); watchers need the calendar only.`,
     `• Triggers: ${
       hasTrigger(services, SUBMIT_HANDLER) && hasTrigger(services, EDIT_HANDLER)
         ? 'installed ✓'

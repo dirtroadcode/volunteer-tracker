@@ -15,9 +15,13 @@ and left an orphan behind. One fixed calendar per campaign removes the whole
 class of bug, because every reader and writer resolves the same calendar and the
 stored ids always match.
 
-Sharing stays a manual step in the Calendar UI. Programmatic sharing needs the
-advanced Calendar service, the teammates' email addresses, and a Workspace
-policy that permits it; a one-time click matches the existing "run Set Up once,
+Sharing stays a manual step in the Calendar UI, and inviting a Collaborator
+takes two grants: Editor access to the Spreadsheet (a bound-script menu item
+only runs for users who can edit the container) and "Make changes to events" on
+the Campaign Calendar (the script runs as the person clicking it, so their own
+execution writes the reminders). Programmatic sharing needs the advanced
+Calendar service, the Collaborators' email addresses, and a Workspace policy
+that permits it; a one-time click matches the existing "run Set Up once,
 then share the Form" model and adds no dependency and no OAuth scope. We also
 rejected an ICS feed: Google refreshes external subscriptions only every 8–24
 hours, feeds are read-only, and the secret iCal address is not exposed to Apps

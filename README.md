@@ -49,10 +49,17 @@ coordinator* and never messages volunteers. (See `docs/adr/0003-coordinator-only
 A campaign's reminders live on **one Campaign Calendar** that Set Up creates and
 records in Settings — not on whoever happens to run New Action. That keeps the
 event ids stored in the Tracker resolvable for every editor, so a second person
-can't split the reminders onto their personal calendar. To give the team the same
-reminders, share that calendar from **Google Calendar → Other calendars**:
-"See all event details" to watch, or "Make changes to events" only for teammates
-who will run New Action themselves. (See `docs/adr/0005-campaign-calendar.md`.)
+can't split the reminders onto their personal calendar.
+
+Inviting a **Collaborator** to help run the campaign takes two grants, in two
+Google surfaces: **Share** the Spreadsheet with them as *Editor* (a bound-script
+menu item only runs for users who can edit the copy), and share the Campaign
+Calendar from **Google Calendar → Other calendars** with *Make changes to
+events* (New Action runs as the person clicking it, so their own execution
+writes the reminders). Someone who only watches needs the calendar alone, as
+*See all event details* — no Spreadsheet access. The Spreadsheet grant is broad:
+a Collaborator can read every tab (the roster included) and open
+**Extensions → Apps Script**. (See `docs/adr/0005-campaign-calendar.md`.)
 
 ## For coordinators
 

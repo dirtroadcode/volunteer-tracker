@@ -84,6 +84,7 @@ describe('Volunteerist landing page', () => {
     expect(text).toMatch(/campaign calendar/i);
     expect(text).toMatch(/share/i);
     expect(text).toContain('Other calendars');
+    expect(text).toContain('Editor');
   });
 
   it('routes form setup through Set Up instead of a dead Sample Form link', () => {
